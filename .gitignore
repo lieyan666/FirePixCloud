@@ -1,3 +1,7 @@
+# Priv
+data/*
+uploads/*
+
 # Logs
 logs
 *.log

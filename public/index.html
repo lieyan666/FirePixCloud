@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FirePixCloud - 文件上传</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .upload-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            background-color: #fafafa;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+        .drop-zone.dragover {
+            border-color: #4CAF50;
+            background-color: #E8F5E9;
+        }
+        .file-list {
+            margin: 20px 0;
+        }
+        .file-item {
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            margin-bottom: 4px;
+        }
+        .result {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #E3F2FD;
+            border-radius: 4px;
+        }
+        .code-display {
+            font-family: monospace;
+            font-size: 1.2em;
+            margin: 10px 0;
+            padding: 8px;
+            background-color: white;
+            border-radius: 4px;
+        }
+        .qr-code {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .qr-code img {
+            max-width: 200px;
+        }
+        .upload-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .upload-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .error {
+            color: #f44336;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="upload-container">
+        <h1>FirePixCloud 文件上传</h1>
+        <div class="drop-zone" id="dropZone">
+            <p>拖放文件到这里或点击选择文件</p>
+            <input type="file" id="fileInput" multiple style="display: none">
+        </div>
+        <div class="file-list" id="fileList"></div>
+        <button class="upload-btn" id="uploadBtn" disabled>上传文件</button>
+        <div class="error" id="error"></div>
+        <div class="result" id="result">
+            <h3>上传成功！</h3>
+            <p>请保存以下信息用于下载：</p>
+            <div class="code-display">
+                提取码：<span id="extractCode"></span>
+            </div>
+            <div class="code-display">
+                校验码：<span id="verifyCode"></span>
+            </div>
+            <div class="qr-code">
+                <p>扫描二维码下载：</p>
+                <img id="qrCode" alt="QR Code">
+            </div>
+            <p>
+                <a href="/download.html" target="_blank">前往下载页面</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const error = document.getElementById('error');
+        const result = document.getElementById('result');
+        const extractCodeSpan = document.getElementById('extractCode');
+        const verifyCodeSpan = document.getElementById('verifyCode');
+        const qrCodeImg = document.getElementById('qrCode');
+
+        let files = [];
+
+        // 处理拖放
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const droppedFiles = Array.from(e.dataTransfer.files);
+            handleFiles(droppedFiles);
+        });
+
+        // 处理点击选择
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', () => {
+            const selectedFiles = Array.from(fileInput.files);
+            handleFiles(selectedFiles);
+        });
+
+        function handleFiles(newFiles) {
+            files = newFiles;
+            updateFileList();
+            uploadBtn.disabled = files.length === 0;
+        }
+
+        function updateFileList() {
+            fileList.innerHTML = '';
+            files.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.textContent = `${file.name} (${formatFileSize(file.size)})`;
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        uploadBtn.addEventListener('click', async () => {
+            error.textContent = '';
+            uploadBtn.disabled = true;
+            
+            const formData = new FormData();
+            files.forEach(file => {
+                formData.append('files', file);
+            });
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    extractCodeSpan.textContent = data.extractCode;
+                    verifyCodeSpan.textContent = data.verifyCode;
+                    qrCodeImg.src = data.qrCode;
+                    result.style.display = 'block';
+                    fileList.innerHTML = '';
+                    files = [];
+                } else {
+                    error.textContent = data.error || '上传失败';
+                }
+            } catch (err) {
+                error.textContent = '上传过程中发生错误';
+                console.error('Upload error:', err);
+            }
+
+            uploadBtn.disabled = false;
+        });
+    </script>
+</body>
+</html>
