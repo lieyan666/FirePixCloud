@@ -185,7 +185,8 @@
             });
 
             try {
-                const response = await fetch('/upload', {
+                const sessionId = window.location.pathname.split('/')[2];
+                const response = await fetch(`/session/${sessionId}/upload`, {
                     method: 'POST',
                     body: formData
                 });
@@ -205,6 +206,9 @@
             } catch (err) {
                 error.textContent = '上传过程中发生错误';
                 console.error('Upload error:', err);
+                if (err.status === 403) {
+                    window.location.href = '/login.html';
+                }
             }
 
             uploadBtn.disabled = false;

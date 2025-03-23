@@ -20,7 +20,10 @@
   },
   "homepage": "https://github.com/lieyan666/FirePixCloud#readme",
   "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "crypto-js": "^4.2.0",
     "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.2",
     "qrcode": "^1.5.4",
     "uuid": "^11.1.0"

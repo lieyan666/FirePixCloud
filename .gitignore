@@ -1,6 +1,7 @@
 # Priv
 data/*
 uploads/*
+reference
 
 # Logs
 logs

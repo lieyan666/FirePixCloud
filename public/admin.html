@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FirePixCloud - 后台管理</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .admin-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2196F3;
+            margin: 10px 0;
+        }
+        .files-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .files-table th, .files-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .files-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .delete-btn:hover {
+            background-color: #d32f2f;
+        }
+        .search-bar {
+            margin-bottom: 20px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .file-code {
+            font-family: monospace;
+            background-color: #f5f5f5;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .pagination {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .page-btn {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+        }
+        .page-btn.active {
+            background-color: #2196F3;
+            color: white;
+            border-color: #2196F3;
+        }
+        .error {
+            color: #f44336;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1>系统管理后台</h1>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <h3>总上传文件数</h3>
+                <div class="stat-value" id="totalFiles">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>总下载次数</h3>
+                <div class="stat-value" id="totalDownloads">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>活跃提取码数</h3>
+                <div class="stat-value" id="activeExtractCodes">0</div>
+            </div>
+        </div>
+
+        <div class="search-bar">
+            <input type="text" class="search-input" id="searchInput" placeholder="搜索提取码、文件名...">
+        </div>
+
+        <div class="table-container">
+            <table class="files-table">
+                <thead>
+                    <tr>
+                        <th>提取码</th>
+                        <th>校验码</th>
+                        <th>文件</th>
+                        <th>上传时间</th>
+                        <th>下载次数</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="filesTableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="pagination" id="pagination"></div>
+        <div class="error" id="error"></div>
+    </div>
+
+    <script>
+        // 页面元素
+        const searchInput = document.getElementById('searchInput');
+        const filesTableBody = document.getElementById('filesTableBody');
+        const pagination = document.getElementById('pagination');
+        const error = document.getElementById('error');
+
+        const itemsPerPage = 10;
+        let currentPage = 1;
+        let filteredData = [];
+
+        // 获取当前session ID
+        function getSessionId() {
+            return window.location.pathname.split('/')[2];
+        }
+
+        // 初始化和错误处理
+        async function init() {
+            try {
+                await loadStats();
+                await loadFiles();
+            } catch (err) {
+                if (err.status === 403) {
+                    window.location.href = '/login.html';
+                }
+            }
+        }
+
+        // 获取统计数据
+        async function loadStats() {
+            try {
+                const sessionId = getSessionId();
+                const response = await fetch(`/session/${sessionId}/api/stats`);
+                const data = await response.json();
+                
+                document.getElementById('totalFiles').textContent = data.totalFiles;
+                document.getElementById('totalDownloads').textContent = data.totalDownloads;
+                document.getElementById('activeExtractCodes').textContent = data.activeExtractCodes;
+            } catch (err) {
+                console.error('Failed to load stats:', err);
+                error.textContent = '加载统计数据失败';
+                if (err.status === 403) {
+                    window.location.href = '/login.html';
+                }
+            }
+        }
+
+        // 加载文件列表
+        async function loadFiles() {
+            try {
+                const sessionId = getSessionId();
+                const response = await fetch(`/session/${sessionId}/api/files`);
+                const data = await response.json();
+                filteredData = data;
+                updateTable();
+            } catch (err) {
+                console.error('Failed to load files:', err);
+                error.textContent = '加载文件列表失败';
+                if (err.status === 403) {
+                    window.location.href = '/login.html';
+                }
+            }
+        }
+
+        // 更新表格显示
+        function updateTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            
+            // 过滤数据
+            const filtered = filteredData.filter(item => 
+                item.extractCode.toLowerCase().includes(searchTerm) ||
+                item.files.some(file => file.originalName.toLowerCase().includes(searchTerm))
+            );
+
+            // 计算分页
+            const totalPages = Math.ceil(filtered.length / itemsPerPage);
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageData = filtered.slice(start, end);
+
+            // 更新表格内容
+            filesTableBody.innerHTML = '';
+            pageData.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><span class="file-code">${item.extractCode}</span></td>
+                    <td><span class="file-code">${item.verifyCode}</span></td>
+                    <td>${item.files.map(f => f.originalName).join('<br>')}</td>
+                    <td>${new Date(item.uploadTime).toLocaleString()}</td>
+                    <td>${item.downloads}</td>
+                    <td>
+                        <button class="delete-btn" onclick="deleteFiles('${item.extractCode}')">删除</button>
+                    </td>
+                `;
+                filesTableBody.appendChild(row);
+            });
+
+            // 更新分页控件
+            updatePagination(totalPages);
+        }
+
+        // 更新分页控件
+        function updatePagination(totalPages) {
+            pagination.innerHTML = '';
+            
+            // 上一页
+            if (currentPage > 1) {
+                const prevBtn = document.createElement('button');
+                prevBtn.className = 'page-btn';
+                prevBtn.textContent = '上一页';
+                prevBtn.onclick = () => {
+                    currentPage--;
+                    updateTable();
+                };
+                pagination.appendChild(prevBtn);
+            }
+
+            // 页码按钮
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                pageBtn.textContent = i;
+                pageBtn.onclick = () => {
+                    currentPage = i;
+                    updateTable();
+                };
+                pagination.appendChild(pageBtn);
+            }
+
+            // 下一页
+            if (currentPage < totalPages) {
+                const nextBtn = document.createElement('button');
+                nextBtn.className = 'page-btn';
+                nextBtn.textContent = '下一页';
+                nextBtn.onclick = () => {
+                    currentPage++;
+                    updateTable();
+                };
+                pagination.appendChild(nextBtn);
+            }
+        }
+
+        // 删除文件
+        async function deleteFiles(extractCode) {
+            if (!confirm('确定要删除这些文件吗？')) return;
+
+            try {
+                const sessionId = getSessionId();
+                const response = await fetch(`/session/${sessionId}/api/files/${extractCode}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    await loadFiles();
+                    await loadStats();
+                } else {
+                    error.textContent = '删除文件失败';
+                }
+            } catch (err) {
+                console.error('Delete error:', err);
+                error.textContent = '删除过程中发生错误';
+                if (err.status === 403) {
+                    window.location.href = '/login.html';
+                }
+            }
+        }
+
+        // 搜索处理
+        searchInput.addEventListener('input', () => {
+            currentPage = 1;
+            updateTable();
+        });
+
+        // 启动页面
+        init();
+
+        // 定期刷新数据
+        setInterval(init, 30000);
+    </script>
+</body>
+</html>
