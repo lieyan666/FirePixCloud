@@ -102,6 +102,11 @@
             font-size: 1.1rem;
             color: var(--text-primary);
         }
+        .wechat-save-tip {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+        }
         .file-item:hover {
             transform: translateX(5px);
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
@@ -135,6 +140,82 @@
         .download-btn:active {
             transform: translateY(1px);
         }
+        
+        /* 查看大图按钮样式 */
+        .view-image-btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.8rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-right: 0.5rem;
+        }
+        .view-image-btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .view-image-btn:active {
+            transform: translateY(1px);
+        }
+        .view-image-btn::before {
+            content: "👁";
+            font-size: 1.2rem;
+        }
+        
+        /* 图片弹窗样式 */
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            animation: zoomIn 0.3s ease-out;
+        }
+        .modal-image {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+        .close-modal {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 5px;
+        }
+        @keyframes zoomIn {
+            from {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -158,10 +239,46 @@
                 grid-template-columns: 1fr;
                 gap: 1rem;
             }
+            
+            .file-item {
+                flex-direction: column;
+                padding: 1rem;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .file-preview {
+                width: 100%;
+                height: auto;
+                max-height: 200px;
+            }
+            
+            .file-info {
+                width: 100%;
+            }
+            
+            .file-item > div:last-child {
+                width: 100%;
+                justify-content: flex-end;
+            }
+            
+            .download-btn,
+            .view-image-btn {
+                padding: 0.6rem 1.4rem;
+                font-size: 0.95rem;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- 图片查看弹窗 -->
+    <div class="image-modal" id="imageModal">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <img class="modal-image" id="modalImage" src="" alt="">
+        </div>
+    </div>
+
     <div class="container">
         <div class="download-container card">
             <h1>FirePixCloud</h1>
@@ -256,6 +373,13 @@
                 fileName.textContent = file.originalName;
                 fileInfo.appendChild(fileName);
 
+                if (file.isImage) {
+                    const tip = document.createElement('div');
+                    tip.className = 'wechat-save-tip';
+                    tip.textContent = '微信用户可点击查看大图后长按保存';
+                    fileInfo.appendChild(tip);
+                }
+
                 if (file.isImage && file.thumbnailPath) {
                     const preview = document.createElement('img');
                     preview.className = 'file-preview';
@@ -265,6 +389,23 @@
                     fileItem.appendChild(preview);
                 }
                 
+                const buttonsDiv = document.createElement('div');
+                buttonsDiv.style.display = 'flex';
+                buttonsDiv.style.gap = '0.5rem';
+
+                if (file.isImage) {
+                    const viewImageBtn = document.createElement('button');
+                    viewImageBtn.className = 'view-image-btn';
+                    viewImageBtn.textContent = '查看';
+                    viewImageBtn.onclick = () => {
+                        const modal = document.getElementById('imageModal');
+                        const modalImage = document.getElementById('modalImage');
+                        modalImage.src = `/download/${file.filename}?extractCode=${extractCode}&verifyCode=${verifyCode}`;
+                        modal.style.display = 'flex';
+                    };
+                    buttonsDiv.appendChild(viewImageBtn);
+                }
+
                 const downloadBtn = document.createElement('button');
                 downloadBtn.className = 'download-btn';
                 downloadBtn.textContent = '下载';
@@ -272,9 +413,10 @@
                     const url = `/download/${file.filename}?extractCode=${extractCode}&verifyCode=${verifyCode}`;
                     window.location.href = url;
                 };
+                buttonsDiv.appendChild(downloadBtn);
 
                 fileItem.appendChild(fileInfo);
-                fileItem.appendChild(downloadBtn);
+                fileItem.appendChild(buttonsDiv);
                 fileList.appendChild(fileItem);
             });
         }
@@ -301,6 +443,27 @@
 
         verifyCodeInput.addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase();
+        });
+
+        // 关闭弹窗的点击事件
+        const modal = document.getElementById('imageModal');
+        const closeBtn = document.querySelector('.close-modal');
+        
+        closeBtn.onclick = () => {
+            modal.style.display = 'none';
+        };
+        
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        };
+        
+        // ESC键关闭弹窗
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            }
         });
     </script>
 </body>
