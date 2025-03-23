@@ -2,6 +2,7 @@
 data/*
 uploads/*
 reference
+config.json
 
 # Logs
 logs
