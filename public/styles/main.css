@@ -21,11 +21,15 @@
 /* 基础样式 */
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+    background: linear-gradient(135deg, #e0f2fe, #dbeafe, #bfdbfe);
     color: var(--text-primary);
     margin: 0;
     padding: 0;
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -34,24 +38,26 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* 容器布局 */
-.container {
-    max-width: 800px;
+.container, .container-lg {
+    width: min(90%, 800px);
     margin: 0 auto;
-    padding: var(--container-padding);
+    padding: 1.5rem;
+    box-sizing: border-box;
 }
 
 .container-lg {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: var(--container-padding);
+    width: min(90%, 1200px);
 }
 
 .card {
     background-color: var(--surface-color);
     border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
-    padding: var(--container-padding);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    padding: clamp(1.5rem, 4vw, 2.5rem);
     animation: slideUp 0.5s ease-out;
+    text-align: center;
+    width: 100%;
+    overflow: hidden;
 }
 
 @keyframes slideUp {
@@ -361,8 +367,12 @@ h1, h2, h3, h4, h5, h6 {
 
 /* 响应式布局 */
 @media (max-width: 768px) {
-    .container,
-    .container-lg {
+    body {
+        padding: 1rem;
+    }
+    
+    .container, .container-lg {
+        width: 100%;
         padding: 1rem;
     }
     
@@ -373,5 +383,20 @@ h1, h2, h3, h4, h5, h6 {
     .table {
         display: block;
         overflow-x: auto;
+    }
+
+    .menu-grid {
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 0.5rem;
+    }
+
+    .container, .container-lg {
+        width: 100%;
+        padding: 0.75rem;
     }
 }

@@ -4,15 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FirePixCloud - 后台管理</title>
-    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="stylesheet" href="/public/styles/main.css">
     <style>
-        body {
-            background: linear-gradient(135deg, #e0f2fe, #dbeafe);
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-        
         .admin-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -262,7 +255,7 @@
                 await loadFiles();
             } catch (err) {
                 if (err.status === 403) {
-                    window.location.href = '/login.html';
+                    window.location.href = '/login';
                 }
             }
         }
@@ -281,7 +274,7 @@
                 console.error('Failed to load stats:', err);
                 error.textContent = '加载统计数据失败';
                 if (err.status === 403) {
-                    window.location.href = '/login.html';
+                    window.location.href = '/login';
                 }
             }
         }
@@ -298,7 +291,7 @@
                 console.error('Failed to load files:', err);
                 error.textContent = '加载文件列表失败';
                 if (err.status === 403) {
-                    window.location.href = '/login.html';
+                    window.location.href = '/login';
                 }
             }
         }
@@ -405,7 +398,7 @@
                 console.error('Delete error:', err);
                 error.textContent = '删除过程中发生错误';
                 if (err.status === 403) {
-                    window.location.href = '/login.html';
+                    window.location.href = '/login';
                 }
             } finally {
                 deleteBtn.disabled = false;

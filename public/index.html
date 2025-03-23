@@ -1,214 +1,101 @@
+<!--
+ * @Author: Lieyan
+ * @Date: 2025-03-23 13:31:54
+ * @LastEditors: Lieyan
+ * @LastEditTime: 2025-03-23 13:57:08
+ * @FilePath: /FirePixCloud/public/index.html
+ * @Description: 
+ * @Contact: QQ: 2102177341  Website: lieyan.space  Github: @lieyan666
+ * @Copyright: Copyright (c) 2025 by lieyanDevTeam, All Rights Reserved. 
+-->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FirePixCloud - 文件上传</title>
-    <link rel="stylesheet" href="/styles/main.css">
+    <title>FirePixCloud - 首页</title>
+    <link rel="stylesheet" href="/public/styles/main.css">
     <style>
-        .result {
-            display: none;
-            margin-top: 1.25rem;
-            padding: 1.5rem;
-            background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+            padding: 1rem;
+        }
+        
+        .menu-item {
+            background: white;
+            padding: 2.5rem 2rem;
             border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            animation: slideUp 0.5s ease-out;
-        }
-        .result h3 {
-            color: var(--primary-color);
-            margin-bottom: 1rem;
-            position: relative;
-        }
-        .result h3::after {
-            content: '';
-            display: block;
-            width: 50px;
-            height: 3px;
-            background: var(--primary-color);
-            margin: 0.5rem 0;
-            border-radius: 2px;
-        }
-        .qr-code {
-            margin: 1.5rem 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+            overflow: hidden;
         }
-        .qr-code img {
-            max-width: 200px;
-            border-radius: 8px;
-            box-shadow: var(--shadow);
+        
+        .menu-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+            transform: scaleX(0);
             transition: transform 0.3s ease;
         }
-        .qr-code img:hover {
-            transform: scale(1.05);
+        
+        .menu-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
         }
-        .code-display {
-            background: white;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            margin: 1rem 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        
+        .menu-item:hover::before {
+            transform: scaleX(1);
         }
-        .file-item {
-            background: white;
-            padding: 1rem 1.5rem;
-            margin-bottom: 0.75rem;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s ease;
+        
+        .menu-item h2 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
         }
-        .file-item:hover {
-            transform: translateX(5px);
-        }
-        .error {
-            animation: shake 0.5s ease-in-out;
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+        
+        .menu-item p {
+            color: var(--text-secondary);
+            margin: 0;
+            font-size: 1rem;
+            line-height: 1.5;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="card">
-        <h1>FirePixCloud 文件上传</h1>
-        <div class="drop-zone" id="dropZone">
-            <p>拖放文件到这里或点击选择文件</p>
-            <p>不支持中文文件名</p>
-            <input type="file" id="fileInput" multiple style="display: none">
+            <h1>FirePixCloud</h1>
+            <div class="menu-grid">
+                <a href="/download" class="menu-item">
+                    <h2>文件提取</h2>
+                    <p>使用提取码下载文件</p>
+                </a>
+                <a href="/login" class="menu-item">
+                    <h2>管理后台</h2>
+                    <p>管理员登录入口</p>
+                </a>
+            </div>
         </div>
-        <div class="file-list" id="fileList"></div>
-        <button class="btn btn-success btn-block" id="uploadBtn" disabled>上传文件</button>
-        <div class="error" id="error"></div>
-        <div class="result" id="result">
-            <h3>上传成功！</h3>
-            <p>请保存以下信息用于下载：</p>
-            <div class="code-display">
-                提取码：<strong><span id="extractCode"></span></strong>
-            </div>
-            <div class="code-display">
-                校验码：<strong><span id="verifyCode"></span></strong>
-            </div>
-            <div class="qr-code">
-                <p>扫描二维码下载：</p>
-                <img id="qrCode" alt="QR Code">
-            </div>
-            <p>
-                <a href="/download.html" target="_blank" class="btn btn-primary">前往下载页面</a>
-            </p>
-            </div>
     </div>
-    </div>
-
-    <script>
-        const dropZone = document.getElementById('dropZone');
-        const fileInput = document.getElementById('fileInput');
-        const fileList = document.getElementById('fileList');
-        const uploadBtn = document.getElementById('uploadBtn');
-        const error = document.getElementById('error');
-        const result = document.getElementById('result');
-        const extractCodeSpan = document.getElementById('extractCode');
-        const verifyCodeSpan = document.getElementById('verifyCode');
-        const qrCodeImg = document.getElementById('qrCode');
-
-        let files = [];
-
-        // 处理拖放
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
-        });
-
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            const droppedFiles = Array.from(e.dataTransfer.files);
-            handleFiles(droppedFiles);
-        });
-
-        // 处理点击选择
-        dropZone.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        fileInput.addEventListener('change', () => {
-            const selectedFiles = Array.from(fileInput.files);
-            handleFiles(selectedFiles);
-        });
-
-        function handleFiles(newFiles) {
-            files = newFiles;
-            updateFileList();
-            uploadBtn.disabled = files.length === 0;
-        }
-
-        function updateFileList() {
-            fileList.innerHTML = '';
-            files.forEach(file => {
-                const fileItem = document.createElement('div');
-                fileItem.className = 'file-item';
-                fileItem.textContent = `${file.name} (${formatFileSize(file.size)})`;
-                fileList.appendChild(fileItem);
-            });
-        }
-
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-
-        uploadBtn.addEventListener('click', async () => {
-            error.textContent = '';
-            uploadBtn.disabled = true;
-            uploadBtn.classList.add('loading');
-            
-            const formData = new FormData();
-            files.forEach(file => {
-                formData.append('files', file);
-            });
-
-            try {
-                const sessionId = window.location.pathname.split('/')[2];
-                const response = await fetch(`/session/${sessionId}/upload`, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    extractCodeSpan.textContent = data.extractCode;
-                    verifyCodeSpan.textContent = data.verifyCode;
-                    qrCodeImg.src = data.qrCode;
-                    result.style.display = 'block';
-                    fileList.innerHTML = '';
-                    files = [];
-                } else {
-                    error.textContent = data.error || '上传失败';
-                }
-            } catch (err) {
-                error.textContent = '上传过程中发生错误';
-                console.error('Upload error:', err);
-                if (err.status === 403) {
-                    window.location.href = '/login.html';
-                }
-            }
-
-            uploadBtn.disabled = false;
-            uploadBtn.classList.remove('loading');
-        });
-    </script>
 </body>
 </html>

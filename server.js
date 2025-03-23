@@ -44,7 +44,7 @@ function checkSession(type) {
         
         if (!session || session.type !== type || 
             new Date().getTime() - session.timestamp > 30 * 60 * 1000) {
-            return res.redirect('/login.html');
+            return res.redirect('/login');
         }
         
         // 更新session时间戳
@@ -83,9 +83,18 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // 静态文件服务
-app.use(express.static('public'));
+app.use('/public', express.static('public'));
 app.use('/thumbnails', express.static(path.join(__dirname, 'uploads', 'thumbnails'))); // 添加缩略图访问路由
 app.use(express.json());
+
+// 特定页面路由
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+app.get('/download', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'download.html'));
+});
 
 // 登录处理
 app.post('/login', express.json(), (req, res) => {
@@ -102,7 +111,7 @@ app.post('/login', express.json(), (req, res) => {
 
         res.json({
             success: true,
-            redirect: `/session/${sessionId}/${type === 'admin' ? 'admin.html' : 'index.html'}`
+            redirect: `/session/${sessionId}/${type === 'admin' ? 'admin' : 'upload'}`
         });
     } else {
         res.json({ success: false });
@@ -111,11 +120,17 @@ app.post('/login', express.json(), (req, res) => {
 
 // 重定向首页到登录页
 app.get('/', (req, res) => {
-    res.redirect('/login.html');
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // 处理session路由
-app.use('/session/:sessionId', express.static('public'));
+app.get('/session/:sessionId/upload', checkSession('upload'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'upload.html'));
+});
+
+app.get('/session/:sessionId/admin', checkSession('admin'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
 
 // 确保数据目录存在
 const dataPath = path.join(__dirname, 'data', 'files.json');

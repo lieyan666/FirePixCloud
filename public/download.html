@@ -4,34 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FirePixCloud - 文件下载</title>
-    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="stylesheet" href="/public/styles/main.css">
     <style>
-        body {
-            background: linear-gradient(135deg, #e0f2fe, #dbeafe);
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
         .download-container {
             max-width: 800px;
-            margin: 0 auto;
+            margin: 2rem auto;
             animation: slideUp 0.5s ease-out;
         }
         h1 {
             text-align: center;
-            margin-bottom: 2rem;
-            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            font-size: 2.2rem;
             position: relative;
             color: var(--text-primary);
         }
-        h1::after {
+        h2 {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 1.4rem;
+            font-weight: 500;
+            margin-top: 0;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        h2::after {
             content: '';
             display: block;
-            width: 50px;
-            height: 3px;
+            width: 40px;
+            height: 2px;
             background: var(--primary-color);
-            margin: 0.5rem auto 0;
+            margin: 0.8rem auto 0;
             border-radius: 2px;
+            opacity: 0.7;
         }
         .code-input-container {
             margin: 2rem auto;
@@ -58,48 +62,78 @@
             display: none;
             animation: fadeIn 0.3s ease-out;
         }
+        .file-list h3 {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 1.2rem;
+            padding-left: 0.5rem;
+            border-left: 3px solid var(--primary-color);
+        }
         .file-item {
             background: white;
-            padding: 1rem 1.5rem;
-            margin-bottom: 0.75rem;
-            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s ease;
-            gap: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s ease;
+            gap: 1.5rem;
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
         .file-preview {
-            width: 100px;
-            height: 100px;
-            object-fit: contain;
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
             background-color: #f8f9fa;
-            border-radius: 4px;
+            border-radius: 8px;
             display: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 4px;
         }
         .file-info {
             flex: 1;
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
+            font-size: 1.1rem;
+            color: var(--text-primary);
         }
         .file-item:hover {
             transform: translateX(5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+            border-color: var(--primary-color);
         }
         .download-btn {
             background-color: var(--success-color);
             color: white;
-            padding: 0.75rem 1.5rem;
+            padding: 0.75rem 1.8rem;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             font-weight: 600;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
         }
         .download-btn:hover {
             background-color: var(--success-dark);
             transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .download-btn::before {
+            content: "⭳";
+            font-size: 1.2rem;
+            margin-top: -2px;
+        }
+        .download-btn:active {
+            transform: translateY(1px);
         }
         @keyframes fadeIn {
             from {
@@ -130,7 +164,8 @@
 <body>
     <div class="container">
         <div class="download-container card">
-            <h1>FirePixCloud 文件下载</h1>
+            <h1>FirePixCloud</h1>
+            <h2>文件下载</h2>
             <div class="code-input-container">
                 <div class="input-row">
                     <div class="input-group">
