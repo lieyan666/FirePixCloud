@@ -4,132 +4,169 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FirePixCloud - 文件下载</title>
+    <link rel="stylesheet" href="/styles/main.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
+            background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+            min-height: 100vh;
+            margin: 0;
             padding: 20px;
-            background-color: #f5f5f5;
         }
         .download-container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin: 0 auto;
+            animation: slideUp 0.5s ease-out;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+            position: relative;
+            color: var(--text-primary);
+        }
+        h1::after {
+            content: '';
+            display: block;
+            width: 50px;
+            height: 3px;
+            background: var(--primary-color);
+            margin: 0.5rem auto 0;
+            border-radius: 2px;
+        }
+        .code-input-container {
+            margin: 2rem auto;
+            max-width: 600px;
+        }
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
         }
         .input-group {
-            margin-bottom: 15px;
+            margin-bottom: 0;
         }
-        .input-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: #333;
-        }
-        .input-group input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 1em;
+        .code-input {
+            text-align: center;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
             font-family: monospace;
-        }
-        .verify-btn {
-            background-color: #2196F3;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1em;
-            width: 100%;
-            margin-top: 10px;
-        }
-        .verify-btn:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
+            text-transform: uppercase;
         }
         .file-list {
-            margin-top: 20px;
+            margin-top: 2rem;
             display: none;
+            animation: fadeIn 0.3s ease-out;
         }
         .file-item {
-            background-color: #f8f9fa;
-            padding: 10px;
-            margin-bottom: 8px;
-            border-radius: 4px;
+            background: white;
+            padding: 1rem 1.5rem;
+            margin-bottom: 0.75rem;
+            border-radius: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease;
+            gap: 1rem;
+        }
+        .file-preview {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            display: none;
+        }
+        .file-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .file-item:hover {
+            transform: translateX(5px);
         }
         .download-btn {
-            background-color: #4CAF50;
+            background-color: var(--success-color);
             color: white;
-            padding: 6px 12px;
+            padding: 0.75rem 1.5rem;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .download-btn:hover {
+            background-color: var(--success-dark);
+            transform: translateY(-2px);
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
         .error {
-            color: #f44336;
-            margin: 10px 0;
-        }
-        #qrScanner {
-            margin-top: 20px;
+            animation: shake 0.5s ease-in-out;
             text-align: center;
+            margin-top: 1rem;
         }
-        .scanner-btn {
-            background-color: #FF9800;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 10px 0;
-        }
-        video {
-            max-width: 100%;
-            border-radius: 4px;
-            margin-top: 10px;
-            display: none;
+        @media (max-width: 640px) {
+            .input-row {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="download-container">
-        <h1>FirePixCloud 文件下载</h1>
-        <div id="codeInput">
-            <div class="input-group">
-                <label for="extractCode">提取码：</label>
-                <input type="text" id="extractCode" placeholder="输入提取码" maxlength="6">
+    <div class="container">
+        <div class="download-container card">
+            <h1>FirePixCloud 文件下载</h1>
+            <div class="code-input-container">
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="extractCode">提取码</label>
+                        <input type="text" 
+                               id="extractCode" 
+                               placeholder="请输入4位提取码" 
+                               maxlength="4" 
+                               class="input-control code-input"
+                               autocomplete="off"
+                               spellcheck="false">
+                    </div>
+                    <div class="input-group">
+                        <label for="verifyCode">校验码</label>
+                        <input type="text" 
+                               id="verifyCode" 
+                               placeholder="请输入4位校验码" 
+                               maxlength="4"
+                               class="input-control code-input"
+                               autocomplete="off"
+                               spellcheck="false">
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-block" id="verifyBtn">验证</button>
+                <div class="error" id="error"></div>
             </div>
-            <div class="input-group">
-                <label for="verifyCode">校验码：</label>
-                <input type="text" id="verifyCode" placeholder="输入校验码" maxlength="6">
-            </div>
-            <button class="verify-btn" id="verifyBtn">验证</button>
-            <div class="error" id="error"></div>
+            <div class="file-list" id="fileList"></div>
         </div>
-        
-        <div id="qrScanner">
-            <button class="scanner-btn" id="scannerBtn">扫描二维码</button>
-            <video id="qrVideo"></video>
-        </div>
-
-        <div class="file-list" id="fileList"></div>
     </div>
 
-    <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
         const extractCodeInput = document.getElementById('extractCode');
         const verifyCodeInput = document.getElementById('verifyCode');
         const verifyBtn = document.getElementById('verifyBtn');
         const error = document.getElementById('error');
         const fileList = document.getElementById('fileList');
-        const scannerBtn = document.getElementById('scannerBtn');
-        const qrVideo = document.getElementById('qrVideo');
-
-        let html5QrcodeScanner = null;
 
         async function verifyAndShowFiles() {
             const extractCode = extractCodeInput.value.trim().toUpperCase();
@@ -139,6 +176,9 @@
                 error.textContent = '请输入提取码和校验码';
                 return;
             }
+
+            verifyBtn.disabled = true;
+            verifyBtn.classList.add('loading');
 
             try {
                 const response = await fetch('/verify', {
@@ -162,6 +202,9 @@
             } catch (err) {
                 error.textContent = '验证过程中发生错误';
                 console.error('Verification error:', err);
+            } finally {
+                verifyBtn.disabled = false;
+                verifyBtn.classList.remove('loading');
             }
         }
 
@@ -171,8 +214,21 @@
                 const fileItem = document.createElement('div');
                 fileItem.className = 'file-item';
                 
+                const fileInfo = document.createElement('div');
+                fileInfo.className = 'file-info';
+                
                 const fileName = document.createElement('span');
                 fileName.textContent = file.originalName;
+                fileInfo.appendChild(fileName);
+
+                if (file.isImage && file.thumbnailPath) {
+                    const preview = document.createElement('img');
+                    preview.className = 'file-preview';
+                    preview.src = `/thumbnails/thumb_${file.filename}`;
+                    preview.alt = file.originalName;
+                    preview.style.display = 'block';
+                    fileItem.appendChild(preview);
+                }
                 
                 const downloadBtn = document.createElement('button');
                 downloadBtn.className = 'download-btn';
@@ -182,58 +238,13 @@
                     window.location.href = url;
                 };
 
-                fileItem.appendChild(fileName);
+                fileItem.appendChild(fileInfo);
                 fileItem.appendChild(downloadBtn);
                 fileList.appendChild(fileItem);
             });
         }
 
         verifyBtn.addEventListener('click', verifyAndShowFiles);
-
-        // 扫码功能
-        scannerBtn.addEventListener('click', () => {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.clear();
-                html5QrcodeScanner = null;
-                qrVideo.style.display = 'none';
-                scannerBtn.textContent = '扫描二维码';
-                return;
-            }
-
-            scannerBtn.textContent = '关闭扫描';
-            qrVideo.style.display = 'block';
-
-            html5QrcodeScanner = new Html5Qrcode("qrVideo");
-            html5QrcodeScanner.start(
-                { facingMode: "environment" },
-                {
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 }
-                },
-                (decodedText) => {
-                    try {
-                        const data = JSON.parse(decodedText);
-                        if (data.extractCode && data.verifyCode) {
-                            extractCodeInput.value = data.extractCode;
-                            verifyCodeInput.value = data.verifyCode;
-                            verifyAndShowFiles();
-                            html5QrcodeScanner.stop();
-                            html5QrcodeScanner = null;
-                            qrVideo.style.display = 'none';
-                            scannerBtn.textContent = '扫描二维码';
-                        }
-                    } catch (e) {
-                        console.error('Invalid QR code data:', e);
-                    }
-                },
-                (error) => {
-                    // console.error('QR scan error:', error);
-                }
-            ).catch((err) => {
-                console.error('Failed to start scanner:', err);
-                error.textContent = '无法启动相机';
-            });
-        });
 
         // 处理回车键
         extractCodeInput.addEventListener('keypress', (e) => {
@@ -246,6 +257,15 @@
             if (e.key === 'Enter') {
                 verifyAndShowFiles();
             }
+        });
+
+        // Auto uppercase input
+        extractCodeInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+        });
+
+        verifyCodeInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
         });
     </script>
 </body>

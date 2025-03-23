@@ -5,6 +5,10 @@ const fs = require('fs');
 const QRCode = require('qrcode');
 const { v4: uuidv4 } = require('uuid');
 const CryptoJS = require('crypto-js');
+const sharp = require('sharp');
+
+// 图片文件扩展名
+const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
 
 // 加载配置文件
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
@@ -49,13 +53,30 @@ function checkSession(type) {
     };
 }
 
+// 确保上传目录存在
+if (!fs.existsSync('uploads')) {
+    fs.mkdirSync('uploads');
+}
+if (!fs.existsSync('uploads/thumbnails')) {
+    fs.mkdirSync('uploads/thumbnails');
+}
+
 // 配置文件上传
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'uploads/');
     },
     filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
+        // 使用 Buffer 转换确保正确的编码
+        const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+        // 保存编码后的文件名，使用一次性的 UTF-8 编码
+        const timestamp = Date.now();
+        const encodedFilename = encodeURIComponent(originalName);
+        // 确保解码正确
+        const decodedFilename = decodeURIComponent(encodedFilename);
+        // 再次编码，确保只有一层编码
+        const finalFilename = encodeURIComponent(decodedFilename);
+        cb(null, timestamp + '-' + finalFilename);
     }
 });
 
@@ -63,6 +84,7 @@ const upload = multer({ storage: storage });
 
 // 静态文件服务
 app.use(express.static('public'));
+app.use('/thumbnails', express.static(path.join(__dirname, 'uploads', 'thumbnails'))); // 添加缩略图访问路由
 app.use(express.json());
 
 // 登录处理
@@ -104,9 +126,9 @@ if (!fs.existsSync(dataPath)) {
     fs.writeFileSync(dataPath, JSON.stringify({}));
 }
 
-// 生成6位随机提取码
+// 生成4位随机数字提取码
 function generateCode() {
-    return Math.random().toString(36).substring(2, 8).toUpperCase();
+    return Math.floor(1000 + Math.random() * 9000).toString();
 }
 
 // 读取文件数据
@@ -126,22 +148,46 @@ app.post('/session/:sessionId/upload', checkSession('upload'), upload.array('fil
     try {
         const files = req.files;
         const extractCode = generateCode();
-        const verifyCode = uuidv4().substring(0, 6).toUpperCase();
+        const verifyCode = Math.floor(1000 + Math.random() * 9000).toString();
         
         const fileData = readFileData();
         const uploadTime = new Date().toISOString();
         
         fileData[extractCode] = {
             verifyCode,
-            files: files.map(file => ({
-                originalName: file.originalname,
-                filename: file.filename,
-                path: file.path
-            })),
+            files: files.map(file => {
+                // 原始文件名已经在multer中被正确转换为UTF-8
+                const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+                return {
+                    originalName,
+                    filename: file.filename,
+                    path: file.path,
+                    isImage: imageExtensions.includes(path.extname(originalName).toLowerCase()),
+                    thumbnailPath: null
+                };
+            }),
             uploadTime,
             downloads: 0
         };
         
+        // 为图片生成缩略图
+        for (const fileEntry of fileData[extractCode].files) {
+            if (fileEntry.isImage) {
+                const thumbnailFilename = `thumb_${fileEntry.filename}`;
+                const thumbnailPath = path.join('uploads', 'thumbnails', thumbnailFilename);
+                const fullThumbnailPath = path.join(__dirname, thumbnailPath);
+                
+                await sharp(path.join(__dirname, fileEntry.path))
+                    .resize(200, 200, {
+                        fit: 'inside',
+                        withoutEnlargement: true
+                    })
+                    .toFile(fullThumbnailPath);
+                
+                fileEntry.thumbnailPath = thumbnailPath;
+            }
+        }
+
         saveFileData(fileData);
         
         // 生成二维码，包含提取码和校验码
@@ -232,6 +278,13 @@ app.delete('/session/:sessionId/api/files/:extractCode', checkSession('admin'), 
             if (fs.existsSync(filePath)) {
                 fs.unlinkSync(filePath);
             }
+
+            if (file.thumbnailPath) {
+                const thumbnailPath = path.join(__dirname, 'uploads', 'thumbnails', `thumb_${file.filename}`);
+                if (fs.existsSync(thumbnailPath)) {
+                    fs.unlinkSync(thumbnailPath);
+                }
+            }
         });
 
         // 从数据中删除记录
@@ -267,8 +320,12 @@ app.get('/download/:filename', (req, res) => {
     fileData[extractCode].downloads += 1;
     saveFileData(fileData);
     
+    // 设置必要的响应头以确保正确的字符编码
+    res.setHeader('Content-Type', 'application/octet-stream; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(fileInfo.originalName)}`);
+    
     // 发送文件
-    res.download(fileInfo.path, fileInfo.originalName);
+    fs.createReadStream(fileInfo.path).pipe(res);
 });
 
 app.listen(port, () => {
