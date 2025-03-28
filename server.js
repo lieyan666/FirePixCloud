@@ -6,6 +6,37 @@ const QRCode = require('qrcode');
 const { v4: uuidv4 } = require('uuid');
 const CryptoJS = require('crypto-js');
 const sharp = require('sharp');
+const winston = require('winston');
+const DailyRotateFile = require('winston-daily-rotate-file');
+
+// 配置日志
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      )
+    }),
+    new DailyRotateFile({
+      filename: 'logs/application-%DATE%.log',
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '20m',
+      maxFiles: '14d'
+    })
+  ]
+});
+
+// 确保日志目录存在
+if (!fs.existsSync('logs')) {
+  fs.mkdirSync('logs');
+}
 
 // 图片文件扩展名
 const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
@@ -36,6 +67,23 @@ setInterval(() => {
     }
 }, 60000);
 
+// 请求日志中间件
+function requestLogger(req, res, next) {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.info({
+      message: 'HTTP request',
+      method: req.method,
+      url: req.originalUrl,
+      status: res.statusCode,
+      duration: `${duration}ms`,
+      ip: req.ip
+    });
+  });
+  next();
+}
+
 // 验证session中间件
 function checkSession(type) {
     return (req, res, next) => {
@@ -44,6 +92,7 @@ function checkSession(type) {
         
         if (!session || session.type !== type || 
             new Date().getTime() - session.timestamp > 30 * 60 * 1000) {
+            logger.warn(`Invalid session attempt: ${sessionId}`);
             return res.redirect('/login');
         }
         
@@ -86,6 +135,7 @@ const upload = multer({ storage: storage });
 app.use('/public', express.static('public'));
 app.use('/thumbnails', express.static(path.join(__dirname, 'uploads', 'thumbnails'))); // 添加缩略图访问路由
 app.use(express.json());
+app.use(requestLogger);
 
 // 特定页面路由
 app.get('/login', (req, res) => {
@@ -220,7 +270,7 @@ app.post('/session/:sessionId/upload', checkSession('upload'), upload.array('fil
             qrCode: qrCodeDataUrl
         });
     } catch (error) {
-        console.error('Upload error:', error);
+        logger.error('Upload error', { error: error.message, stack: error.stack });
         res.status(500).json({ success: false, error: 'Upload failed' });
     }
 });
@@ -254,7 +304,7 @@ app.get('/session/:sessionId/api/stats', checkSession('admin'), (req, res) => {
         };
         res.json(stats);
     } catch (error) {
-        console.error('Stats error:', error);
+        logger.error('Stats error', { error: error.message, stack: error.stack });
         res.status(500).json({ error: 'Failed to get stats' });
     }
 });
@@ -272,7 +322,7 @@ app.get('/session/:sessionId/api/files', checkSession('admin'), (req, res) => {
         }));
         res.json(files);
     } catch (error) {
-        console.error('Files list error:', error);
+        logger.error('Files list error', { error: error.message, stack: error.stack });
         res.status(500).json({ error: 'Failed to get files list' });
     }
 });
@@ -308,7 +358,7 @@ app.delete('/session/:sessionId/api/files/:extractCode', checkSession('admin'), 
 
         res.json({ success: true });
     } catch (error) {
-        console.error('Delete error:', error);
+        logger.error('Delete error', { error: error.message, stack: error.stack });
         res.status(500).json({ error: 'Failed to delete files' });
     }
 });
@@ -344,5 +394,5 @@ app.get('/download/:filename', (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`FirePixCloud running at http://localhost:${port}`);
+    logger.info(`FirePixCloud running at http://localhost:${port}`);
 });
